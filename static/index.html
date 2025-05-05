@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprint Matcher</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f6fa;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #e0e0e0;
+        }
+        h1 {
+            font-size: 26px;
+            color: #1a237e;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px 40px 12px 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 15px;
+            color: #555;
+            background: #fafafa;
+            transition: border-color 0.3s ease;
+        }
+        input[type="file"]:hover {
+            border-color: #3f51b5;
+        }
+        .file-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            color: #666;
+        }
+        .paste-instruction {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3f51b5;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        button:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #303f9f;
+            transform: translateY(-1px);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .input-image-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .input-image-section img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.5;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .error {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.5;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            background: #ffebee;
+            color: #d32f2f;
+            border: 1px solid #ef9a9a;
+        }
+        .matches {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .match {
+            margin: 10px;
+            text-align: center;
+        }
+        .match img {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .match p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fingerprint Matcher</h1>
+        <div class="file-input-wrapper">
+            <input type="file" id="fileInput" accept="image/*">
+            <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+        </div>
+        <div class="paste-instruction">Or press Ctrl+V to paste an image</div>
+        <button id="submitButton" onclick="handleSubmit()">Process Fingerprint</button>
+        <div id="inputImageSection" class="input-image-section" style="display: none;">
+            <h2>Uploaded Image</h2>
+            <img id="inputImage" src="" alt="Uploaded Fingerprint">
+        </div>
+        <div id="result" class="result" style="display: none;"></div>
+        <div id="matches" class="matches" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function handleSubmit(file) {
+            const fileInput = document.getElementById('fileInput');
+            const submitButton = document.getElementById('submitButton');
+            const inputImageSection = document.getElementById('inputImageSection');
+            const inputImage = document.getElementById('inputImage');
+            const resultDiv = document.getElementById('result');
+            const matchesDiv = document.getElementById('matches');
+            const errorDiv = document.getElementById('error');
+
+            // Reset previous results
+            inputImageSection.style.display = 'none';
+            resultDiv.style.display = 'none';
+            matchesDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+            matchesDiv.innerHTML = '';
+            errorDiv.innerHTML = '';
+
+            // Use the provided file (from paste) or the file from input
+            const selectedFile = file || fileInput.files[0];
+            if (!selectedFile) {
+                errorDiv.innerHTML = 'Please select or paste an image';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = 'Processing...';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/upload-fingerprint', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+
+                // Display the uploaded image using the path returned by the backend
+                if (data.uploaded_image_path) {
+                    inputImage.src = data.uploaded_image_path;
+                    inputImageSection.style.display = 'block';
+                } else {
+                    errorDiv.innerHTML = 'Failed to display uploaded image';
+                    errorDiv.style.display = 'block';
+                }
+
+                if (data.success) {
+                    resultDiv.innerHTML = 'Matches found!';
+                    resultDiv.style.display = 'block';
+
+                    // Display top matches
+                    matchesDiv.innerHTML = '';
+                    data.top_matches.forEach(match => {
+                        const matchDiv = document.createElement('div');
+                        matchDiv.className = 'match';
+                        let imageHtml = '';
+                        if (match.image_path) {
+                            imageHtml = `<img src="${match.image_path}" alt="${match.fingerprint_id}" onerror="this.src='https://via.placeholder.com/150?text=Image+Not+Found';">`;
+                        } else {
+                            imageHtml = `<img src="https://via.placeholder.com/150?text=Image+Not+Found" alt="${match.fingerprint_id}">`;
+                        }
+                        matchDiv.innerHTML = `
+                            ${imageHtml}
+                            <p>${match.fingerprint_id} (Score: ${match.score.toFixed(2)})</p>
+                        `;
+                        matchesDiv.appendChild(matchDiv);
+                    });
+                    matchesDiv.style.display = 'flex';
+                } else {
+                    resultDiv.innerHTML = 'No matching fingerprints found';
+                    resultDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.innerHTML = 'Error processing fingerprint: ' + err.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Process Fingerprint';
+                fileInput.value = ''; // Clear the file input
+            }
+        }
+
+        // Add paste event listener for Ctrl+V
+        document.addEventListener('paste', async (event) => {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    const file = new File([blob], 'pasted-image.png', { type: blob.type });
+                    await handleSubmit(file);
+                    break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

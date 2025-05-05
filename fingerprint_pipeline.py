@@ -10,7 +10,7 @@ from utils.gabor_filter import gabor_filter
 from utils.frequency import ridge_freq
 from utils import orientation
 from utils.crossing_number import calculate_minutiaes
-from tqdm import tqdm
+# from tqdm import tqdm
 from utils.skeletonize import skeletonize
 from utils.matching_fingerprint import load_minutiae_from_json, fingerprint_matching_ransac
 
@@ -67,7 +67,7 @@ def fingerprint_pipline(input_img):
 
 if __name__ == '__main__':
     # open images
-    img_dir = './sample_inputs/*'
+    img_dir = './input_test/*'
     output_dir = './output/'
     def open_images(directory):
         images_paths = glob(directory)
